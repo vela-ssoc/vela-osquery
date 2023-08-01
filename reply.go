@@ -13,28 +13,28 @@ type reply struct {
 	Err    error
 }
 
-func newReply(r *osquery.ExtensionResponse, e error) reply {
+func newReply(r *osquery.ExtensionResponse, e error) *reply {
 	var ret reply
 	if r == nil {
 		ret.Err = e
-		return ret
+		return &ret
 	}
 
-	return reply{
+	return &reply{
 		Status: r.Status,
 		Body:   r.Response,
 		Err:    e,
 	}
 }
 
-func (r reply) String() string                         { return lua.B2S(r.raw()) }
-func (r reply) Type() lua.LValueType                   { return lua.LTObject }
-func (r reply) AssertFloat64() (float64, bool)         { return 0, false }
-func (r reply) AssertString() (string, bool)           { return "", false }
-func (r reply) AssertFunction() (*lua.LFunction, bool) { return nil, false }
-func (r reply) Peek() lua.LValue                       { return r }
+func (r *reply) String() string                         { return lua.B2S(r.raw()) }
+func (r *reply) Type() lua.LValueType                   { return lua.LTObject }
+func (r *reply) AssertFloat64() (float64, bool)         { return 0, false }
+func (r *reply) AssertString() (string, bool)           { return "", false }
+func (r *reply) AssertFunction() (*lua.LFunction, bool) { return nil, false }
+func (r *reply) Peek() lua.LValue                       { return r }
 
-func (r reply) Meta(L *lua.LState, key lua.LValue) lua.LValue {
+func (r *reply) Meta(L *lua.LState, key lua.LValue) lua.LValue {
 	n, ok := key.AssertFloat64()
 	if !ok {
 		return lua.LNil
@@ -48,7 +48,7 @@ func (r reply) Meta(L *lua.LState, key lua.LValue) lua.LValue {
 	return row(r.Body[idx])
 }
 
-func (r reply) Index(L *lua.LState, key string) lua.LValue {
+func (r *reply) Index(L *lua.LState, key string) lua.LValue {
 	switch key {
 
 	case "ok":

@@ -1,9 +1,10 @@
 package osquery
 
 import (
-	"fmt"
+	"github.com/osquery/osquery-go"
 	"github.com/vela-ssoc/vela-kit/lua"
 	"github.com/vela-ssoc/vela-kit/vela"
+	"time"
 )
 
 var (
@@ -21,52 +22,37 @@ var (
 	local rx = cli.query("select * from aa")
 */
 
-func daemonL(L *lua.LState) int {
-	cfg := newConfig(L)
-	proc := L.NewVelaData(cfg.name, typeof)
-	if proc.IsNil() {
-		proc.Set(newOsq(cfg))
-	} else {
-		o := proc.Data.(*osqueryEx)
-		xEnv.Free(o.cfg.co)
-		o.cfg = cfg
+func osqueryL(L *lua.LState) int {
+	s := NewOsquery()
+	if e := s.DetectAndInstall(); e != nil {
+		L.RaiseError("detect and install osquery fail %v", e)
+		return 0
 	}
 
-	L.Push(proc)
-	return 1
-}
-
-func queryL(L *lua.LState) int {
-	if osq == nil {
-		L.Push(newReply(nil, fmt.Errorf("not found osquery osq")))
+	cli, err := osquery.NewClient(ExtensionsSocket, 30*time.Second)
+	if err != nil {
+		L.Push(newReply(nil, err))
 		return 1
 	}
-
-	return osq.queryL(L)
+	r, err := cli.Query(L.CheckString(1))
+	v := newReply(r, err)
+	L.Push(v)
+	return 1
 }
 
-func clientL(L *lua.LState) int {
-	sock := L.CheckString(1)
-	c := newClient(sock)
-	proc := L.NewVelaData("osquery.client", clientTypeof)
-	if proc.IsNil() {
-		proc.Set(c)
-	} else {
-		old := proc.Data.(*Client)
-		old.Close()
-		proc.Set(c)
+func startupL(L *lua.LState) int {
+	s := NewOsquery()
+	e := s.DetectAndInstall()
+	if e != nil {
+		L.RaiseError("detect and install osquery fail %v", e)
 	}
-
-	xEnv.Start(L, c).From(L.CodeVM()).Do()
-	L.Push(proc)
-	return 1
+	return 0
 }
 
 func WithEnv(env vela.Environment) {
 	xEnv = env
+	define(xEnv.R())
 	kv := lua.NewUserKV()
-	kv.Set("daemon", lua.NewFunction(daemonL))
-	kv.Set("query", lua.NewFunction(queryL))
-	kv.Set("client", lua.NewFunction(clientL))
-	env.Set("osquery", kv)
+	kv.Set("startup", lua.NewFunction(startupL))
+	xEnv.Set("osquery", lua.NewExport("vela.osquery.export", lua.WithFunc(osqueryL), lua.WithTable(kv)))
 }
