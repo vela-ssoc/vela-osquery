@@ -2,7 +2,7 @@ package osquery
 
 import (
 	"fmt"
-	"github.com/vela-ssoc/vela-kit/auxlib"
+	"github.com/vela-ssoc/vela-kit/stdutil"
 	"os/exec"
 	"path/filepath"
 )
@@ -22,12 +22,12 @@ type Service struct {
 }
 
 func (s *Service) install(path string) error {
-	_, w := auxlib.Stdout()
-	defer w.Close()
+	std := stdutil.New(stdutil.Console())
+	defer std.Close()
 
 	cmd := exec.Command("rpm", "-ivh", path)
-	cmd.Stdout = w
-	cmd.Stderr = w
+	cmd.Stdout = std
+	cmd.Stderr = std
 
 	defer func() {
 		if cmd.Process == nil {
@@ -60,11 +60,11 @@ func (s *Service) start() error {
 		return fmt.Errorf("not found system service command")
 	}
 
-	_, w := auxlib.Stdout()
-	defer w.Close()
+	std := stdutil.New(stdutil.Console())
+	defer std.Close()
 
-	cmd.Stdout = w
-	cmd.Stderr = w
+	cmd.Stdout = std
+	cmd.Stderr = std
 
 	return cmd.Run()
 }
@@ -78,12 +78,12 @@ func (s *Service) DetectAndInstall() error {
 }
 
 func (s *Service) build(path string) error {
-	_, w := auxlib.Stdout()
-	defer w.Close()
+	std := stdutil.New(stdutil.Console())
+	defer std.Close()
 
 	cmd := exec.Command("sh", filepath.Join(path, "build.sh"), path)
-	cmd.Stdout = w
-	cmd.Stderr = w
+	cmd.Stdout = std
+	cmd.Stderr = std
 
 	return cmd.Run()
 }

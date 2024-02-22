@@ -56,3 +56,14 @@ func WithEnv(env vela.Environment) {
 	kv.Set("startup", lua.NewFunction(startupL))
 	xEnv.Set("osquery", lua.NewExport("vela.osquery.export", lua.WithFunc(osqueryL), lua.WithTable(kv)))
 }
+
+//vela.osquery("select * from arp_cache").pipe()
+
+/*
+	local r = vela.osquery()
+
+	r.pipe(arg , [name] , [force]) --
+	r.keys() --
+	r.
+
+*/

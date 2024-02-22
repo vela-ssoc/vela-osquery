@@ -2,8 +2,8 @@ package osquery
 
 import (
 	"fmt"
-	"github.com/vela-ssoc/vela-kit/auxlib"
 	"github.com/vela-ssoc/vela-kit/fileutil"
+	"github.com/vela-ssoc/vela-kit/stdutil"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
@@ -158,16 +158,20 @@ install:
 }
 
 func (s *Service) install() error {
-	_, w := auxlib.Stdout()
+	console := stdutil.New(stdutil.Console())
+	defer func() {
+		_ = console.Close()
+	}()
+
 	cmd := exec.Command(s.executable, "--install", "--verbose")
-	cmd.Stdout = w
-	cmd.Stderr = w
+	cmd.Stdout = console
+	cmd.Stderr = console
 
 	defer func() {
 		if cmd.Process != nil {
 			cmd.Process.Kill()
 		}
-		w.Close()
+		_ = console.Close()
 	}()
 
 	err := cmd.Run()
